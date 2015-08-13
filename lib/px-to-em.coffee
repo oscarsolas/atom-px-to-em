@@ -11,6 +11,10 @@ module.exports = PxToEm =
           'em'
           'rem'
         ]
+      Comment:
+        type: 'boolean'
+        description: 'Add conversion comment.'
+        default: true
 
    pxToEmView: null
    modalPanel: null
@@ -21,9 +25,13 @@ module.exports = PxToEm =
 
    convert: ->
       unit = 'em'
+      comment = true
       atom.config.observe 'px-to-em.Unit', (type) ->
         if type == 'rem'
           unit = 'rem'
+
+      atom.config.observe 'px-to-em.Comment', (val) ->
+        comment = val
 
       editor = atom.workspace.getActivePaneItem()
       #select current line
@@ -43,16 +51,18 @@ module.exports = PxToEm =
          #if not specify a base value is generated default
          if base == ''
             base = '16'
-            text = text + ' '
+            text = text
          #each the px values
          values.forEach (val, key) ->
             text = text.replace(val, parseInt(val)/base + unit)
-            if key < values.length-1
-               text = text.concat('/* ' + parseInt(val) + ' */ ').replace(/(\r\n|\n|\r)/gi, '')
+            if key < values.length-1 && comment
+               text = text.concat(' /* ' + parseInt(val) + ' */ ').replace(/(\r\n|\n|\r)/gi, '')
             else
                fullBase = '/'+base.replace(/(\r\n|\n|\r)/gi, '')
-               text = text.replace(fullBase, ' ').replace(/(\r\n|\n|\r)/gi, '') + ('/* ' + parseInt(val) + ' */')
-               text = text.replace(/\ \*\//g, '/' + base.replace(/(\r\n|\n|\r)/gi, '') + ' */')
+               text = text.replace(fullBase, ' ').replace(/(\r\n|\n|\r)/gi, '')
+               if comment
+                 text += ' /* ' + parseInt(val) + ' */'
+                 text = text.replace(/\ \*\//g, '/' + base.replace(/(\r\n|\n|\r)/gi, '') + ' */')
                text = text + '\n'
 
       original.insertText(text)
